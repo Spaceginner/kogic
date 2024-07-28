@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use crate::component::Component;
 use crate::components::{AND, Clock};
 use crate::simulation::Simulation;
@@ -5,17 +7,18 @@ use crate::simulation::Simulation;
 mod simulation;
 mod component;
 mod components;
+mod app;
 
-fn main() {
-    let mut sim = Simulation::default();
-    
-    let clock_1 = sim.add_component(Component::new(Clock::new(2), &[]));
-    let clock_2 = sim.add_component(Component::new(Clock::new(5), &[]));
-    let and = sim.add_component(Component::new(AND, &[(clock_1, 0), (clock_2, 0)]));
-    
-    loop {
-        sim.tick();
-        println!("{sim}");
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+pub struct App {
+    simulation: Simulation
+}
+
+fn main() -> Result<(), eframe::Error> {
+    env_logger::init();
+
+    eframe::run_native(
+        "kogic",
+        eframe::NativeOptions::default(),
+        Box::new(|cc| Ok(Box::new(app::App::new(cc))))
+    )
 }
