@@ -13,26 +13,26 @@ impl Simulation {
         self.queue.push(index);
     }
     
-    fn get_states(components: &esnarl::Snarl<Component>) -> HashMap<esnarl::NodeId, Vec<bool>> {
+    fn get_states(components: &esnarl::Snarl<Component>) -> HashMap<esnarl::NodeId, Vec<Vec<bool>>> {
         HashMap::from_iter(components.node_ids().map(|(i, comp)| (i, comp.state.clone())))
     }
     
     pub fn tick(&mut self, components: &mut esnarl::Snarl<Component>) {
         let states = Self::get_states(components);
-        let mut queue = self.queue.clone();
         
-        while let Some(comp) = self.queue.pop().map(|i| &mut components[i]) {
-            comp.update(&states);
-        };
+        self.queue.iter().for_each(|i| components[*i].update(&states));
 
-        while let Some((i, comp)) = queue.pop().map(|i| (i, &mut components[i])) {
+        let mut next_queue = Vec::new();
+        while let Some((i, comp)) = self.queue.pop().map(|i| (i, &mut components[i])) {
             if comp.finalize() {
-                self.queue.append(&mut comp.connected_to.clone());
+                next_queue.append(&mut comp.connected_to.clone());
             };
             
-            if comp.updater.always_update() {
-                self.queue.push(i);
+            if comp.updater.force_update() {
+                next_queue.push(i);
             };
         };
+        
+        self.queue = next_queue;
     }
 }
